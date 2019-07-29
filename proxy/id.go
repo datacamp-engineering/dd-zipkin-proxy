@@ -107,7 +107,7 @@ func (id *Id) UnmarshalJSON(bytes []byte) error {
 }
 
 func ParseId(bytes []byte) (Id, error) {
-	if len(bytes) > 16 {
+	if len(bytes) > 32 {
 		return 0, errors.New("hex value too large")
 	}
 
