@@ -16,13 +16,28 @@ var bufferPool = sync.Pool{
 	},
 }
 
-var endpointValueDecoder = hyperjson.MakeStructDecoder([]hyperjson.Field{
-	{
-		JsonName: "serviceName",
-		Decoder:  hyperjson.StringValueDecoder,
-		Offset:   hyperjson.OffsetOf(endpoint{}, "ServiceName"),
-	},
-})
+func endpointValueDecoder(target unsafe.Pointer, p *hyperjson.Parser) error {
+	next, err := p.NextType()
+	if err != nil {
+		return err
+	}
+
+	if next == hyperjson.TypeNull {
+		*(*endpoint)(target) = endpoint{
+			ServiceName: "",
+		}
+		return p.Skip()
+	}
+
+	var decoder = hyperjson.MakeStructDecoder([]hyperjson.Field{
+		{
+			JsonName: "serviceName",
+			Decoder:  hyperjson.StringValueDecoder,
+			Offset:   hyperjson.OffsetOf(endpoint{}, "ServiceName"),
+		},
+	})
+	return decoder(target, p)
+}
 
 // Decodes any type of literal to a string
 func anyValueDecoder(target unsafe.Pointer, p *hyperjson.Parser) error {
