@@ -2,11 +2,12 @@ package datadog
 
 import (
 	"encoding/json"
+	"os"
+	"time"
+
 	"github.com/DataDog/dd-trace-go/tracer"
 	"github.com/flachnetz/dd-zipkin-proxy/proxy"
 	"github.com/sirupsen/logrus"
-	"os"
-	"time"
 )
 
 var log = logrus.WithField("prefix", "datadog")
@@ -83,9 +84,19 @@ func Sink(transport tracer.Transport, tracesCh <-chan proxy.Trace) {
 				}
 
 				// use fallback if name is empty
-				resource := span.Name
+				name := span.Name
+				if name == "" {
+					name = "(name empty)"
+				}
+
+				resource := span.Tags["datadog.resource"]
 				if resource == "" {
 					resource = "(resource empty)"
+				}
+
+				service := span.Tags["datadog.service"]
+				if service == "" {
+					service = span.Service
 				}
 
 				// get a buffer of spans
@@ -101,8 +112,8 @@ func Sink(transport tracer.Transport, tracesCh <-chan proxy.Trace) {
 					Resource: resource,
 
 					// use span.Service as the datadog Service and Name
-					Name:    span.Service,
-					Service: span.Service,
+					Name:    name,
+					Service: service,
 
 					Start:    span.Timestamp.ToTime().UnixNano(),
 					Duration: duration.Nanoseconds(),
